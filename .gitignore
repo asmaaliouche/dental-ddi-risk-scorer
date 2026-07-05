@@ -216,3 +216,25 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ── Project-specific ──────────────────────────────────────────────────────────
+
+# Data — never commit raw datasets (TWOSIDES files can be hundreds of MB)
+data/raw/
+data/processed/
+
+# Keep reference data (curated dental drug list etc.) — do NOT ignore data/reference/
+
+# Environment
+.env
+
+# Virtual environments
+.venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+Thumbs.db
+desktop.ini
+.DS_Store
