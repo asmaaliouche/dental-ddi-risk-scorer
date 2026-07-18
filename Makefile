@@ -1,4 +1,4 @@
-.PHONY: install dev lint format test run clean
+.PHONY: install dev lint format test check pipeline verify run clean
 
 # ── Setup ─────────────────────────────────────────────────────────────────────
 install:
@@ -18,6 +18,24 @@ format:
 # ── Tests ─────────────────────────────────────────────────────────────────────
 test:
 	poetry run pytest tests/ -v
+
+# ── Run this before every commit ──────────────────────────────────────────────
+check: lint test
+	@echo "✅  lint + tests passed — safe to commit"
+
+# ── Data pipeline ─────────────────────────────────────────────────────────────
+pipeline:
+	poetry run python src/ddi_scorer/pipeline.py
+
+verify:
+	poetry run python -c "\
+import pandas as pd; \
+df = pd.read_parquet('data/processed/interactions.parquet'); \
+print(f'Rows: {len(df):,}'); \
+print(f'Columns: {list(df.columns)}'); \
+print(f'Dental drugs: {sorted(df[\"dental_drug_name\"].dropna().unique())}'); \
+print(f'Unique pairs: {df[[\"drug_1_concept_name\",\"drug_2_concept_name\"]].drop_duplicates().shape[0]:,}'); \
+"
 
 # ── API ───────────────────────────────────────────────────────────────────────
 run:
