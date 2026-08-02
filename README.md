@@ -14,32 +14,84 @@ This tool filters the known interaction space down to what matters in the dental
 
 ---
 
+## How It Works (Data Flow)
+
+```
+dental_drugs.csv          TWOSIDES (42.9M rows)
+(27 dental drugs)    →    filter: keep rows where
+curated by category        drug_1 OR drug_2 is dental
+                                    ↓
+                      interactions.parquet (7M rows, 105 MB)
+                      dental drug ↔ patient drug pairs
+                                    ↓
+                         scorer.py (next step)
+                         composite risk score per pair
+                                    ↓
+                         POST /check → ranked results
+```
+
+**The key idea:** We don't look at all possible drug interactions — only the subset where a dentist's drug meets a patient's existing medication. The 27 dental drugs intersect with 1,739 drugs a patient might already be on, producing 20,592 unique drug pairs with real pharmacovigilance signal.
+
+---
+
 ## Data Sources
 
 | Source | Description | Licence |
 |--------|-------------|---------|
-| [TWOSIDES](http://tatonettilab.org/offsides/) | 1,332 drug pairs with 868 adverse drug reactions derived from FDA FAERS spontaneous reports via disproportionality analysis | Creative Commons |
+| [TWOSIDES](http://tatonettilab.org/offsides/) | 42.9M rows — drug pairs × adverse effects derived from FDA FAERS spontaneous reports via disproportionality analysis (PRR). Covers 1,918 unique drugs and 11,281 unique adverse effects. | Creative Commons |
 
-> **Note:** DrugBank was the original target but was replaced by TWOSIDES, which is freely available without registration and provides real-world pharmacovigilance signal.
+### What TWOSIDES contains (per row)
+
+| Column | Description |
+|--------|-------------|
+| `drug_1_concept_name` / `drug_2_concept_name` | Drug pair |
+| `condition_concept_name` | Reported adverse effect (e.g. "Arthralgia", "QT prolongation") |
+| `PRR` | Proportional Reporting Ratio — how much more often this pair is reported together vs. separately. Higher = stronger signal. |
+| `PRR_error` | Standard error of PRR |
+| `mean_reporting_frequency` | Co-report frequency in FAERS |
+| `A, B, C, D` | 2×2 contingency table for the disproportionality calculation |
 
 ---
 
-## Dental Drug List
+## Dental Drug List (`data/reference/dental_drugs.csv`)
 
-Manually curated ~35 drugs that dentists prescribe across six categories:
+27 drugs across 8 categories — curated to match the exact concept names used in TWOSIDES so they join cleanly with no fuzzy matching.
 
 | Category | Drugs |
 |----------|-------|
-| **Antibiotics** | Amoxicillin, Amoxicillin-clavulanate, Metronidazole, Clindamycin, Clarithromycin, Azithromycin |
-| **Analgesics (NSAIDs)** | Ibuprofen, Aspirin, Naproxen |
-| **Analgesics (other)** | Paracetamol (Acetaminophen) |
-| **Opioids** | Codeine, Tramadol |
-| **Local Anaesthetics** | Lidocaine, Articaine, Mepivacaine |
-| **Anxiolytics** | Diazepam, Midazolam |
-| **Antifungals** | Fluconazole |
-| **Steroids** | Dexamethasone, Prednisolone |
+| **Antibiotics** | Amoxicillin, Metronidazole, Clindamycin, Clarithromycin, Azithromycin |
+| **NSAIDs** | Ibuprofen, Aspirin, Naproxen |
+| **Non-opioid Analgesics** | Acetaminophen (Paracetamol) |
+| **Opioid Analgesics** | Codeine, Dihydrocodeine, Tramadol |
+| **Local Anaesthetics** | Lidocaine, Articaine, Mepivacaine, Bupivacaine, Levobupivacaine, Prilocaine |
+| **Anxiolytics / Sedatives** | Diazepam, Midazolam |
+| **Antifungals** | Fluconazole, Nystatin |
+| **Corticosteroids** | Dexamethasone, Prednisolone, Methylprednisolone, Prednisone |
+| **Vasoconstrictors** | Epinephrine (used with local anaesthetics) |
 
-This list is what makes the tool *clinical* rather than generic — a pure ML engineer would treat all drugs equally; the curation is where domain knowledge adds value.
+The reference CSV also stores ATC codes and clinical notes for each drug (e.g. "Strong CYP3A4 inhibitor" for clarithromycin and fluconazole).
+
+---
+
+## Data Pipeline (`src/ddi_scorer/pipeline.py`)
+
+Streams the 4 GB TWOSIDES CSV in 500,000-row chunks - never loads the whole file into memory.
+
+**Steps:**
+1. Load the 27 dental drugs from `data/reference/dental_drugs.csv`
+2. For each chunk, keep rows where `drug_1` OR `drug_2` is a dental drug
+3. Label each row: which drug is the dental drug (prescriber side) and which is the patient's drug
+4. Save filtered data to `data/processed/interactions.parquet` (105 MB, 7,038,176 rows)
+
+**Run it:**
+```bash
+make pipeline
+```
+
+**Verify the output:**
+```bash
+make verify
+```
 
 ---
 
@@ -47,15 +99,15 @@ This list is what makes the tool *clinical* rather than generic — a pure ML en
 
 ### Scoring (Path A — Rule-based composite risk score)
 
-Each interaction pair is scored on three axes:
+Each dental drug ↔ patient drug pair generates many rows in `interactions.parquet` (one per reported adverse effect). The scorer aggregates them into a single risk score per pair using three axes:
 
-1. **Pharmacovigilance signal strength** — proportional reporting ratio (PRR) and reporting odds ratio (ROR) from TWOSIDES
-2. **Report count** — raw number of adverse event co-reports
-3. **Adverse event severity** — weighted by outcome type (death > hospitalisation > other)
+1. **Signal strength** — PRR from TWOSIDES (how disproportionately often this pair is co-reported)
+2. **Breadth** — number of distinct adverse effects reported for this pair
+3. **Severity weight** — adverse effects vary in clinical seriousness (QT prolongation ≠ dry mouth)
 
 Scores are normalised to a 0–100 scale and binned into `major / moderate / minor`.
 
-Interpretability is prioritised over model complexity — a clinician must be able to understand *why* a pair is flagged.
+Interpretability is prioritised over model complexity - a clinician must be able to understand why a pair is flagged.
 
 ---
 
@@ -64,20 +116,38 @@ Interpretability is prioritised over model complexity — a clinician must be ab
 ```
 dental-ddi-risk-scorer/
 ├── data/
-│   ├── raw/           # TWOSIDES source files (git-ignored)
-│   ├── processed/     # Cleaned interaction tables (git-ignored)
-│   └── reference/     # Curated dental drug list (committed)
-├── notebooks/         # Exploratory analysis
+│   ├── raw/                    # TWOSIDES.csv — git-ignored (4 GB)
+│   ├── processed/              # interactions.parquet — git-ignored (105 MB)
+│   └── reference/
+│       └── dental_drugs.csv    # 27 curated dental drugs — committed
+├── notebooks/                  # Jupyter notebooks for exploration
 ├── src/
-│   └── ddi_scorer/    # Core scoring package
+│   └── ddi_scorer/
+│       ├── __init__.py
+│       └── pipeline.py         # TWOSIDES filter → interactions.parquet
 ├── api/
-│   ├── main.py        # FastAPI app entry point
-│   └── routers/       # Endpoint modules
+│   ├── main.py                 # FastAPI app entry point
+│   └── routers/                # Endpoint modules
 ├── tests/
 ├── pyproject.toml
 ├── Makefile
 └── .env.example
 ```
+
+---
+
+## Makefile Commands
+
+| Command | What it does |
+|---------|-------------|
+| `make install` | Install dependencies |
+| `make dev` | Install with dev tools (jupyter, pytest, ruff…) |
+| `make pipeline` | Run the TWOSIDES filter pipeline |
+| `make verify` | Sanity-check the output parquet |
+| `make lint` | Run ruff linter |
+| `make test` | Run pytest |
+| `make check` | lint + test — **run this before every commit** |
+| `make run` | Start the FastAPI server |
 
 ---
 
@@ -94,14 +164,21 @@ dental-ddi-risk-scorer/
 
 ```bash
 # 1. Clone and install
-git clone https://github.com/your-username/dental-ddi-risk-scorer.git
+git clone https://github.com/asmaaliouche/dental-ddi-risk-scorer.git
 cd dental-ddi-risk-scorer
 poetry install --with dev
 
 # 2. Set up environment
 cp .env.example .env
 
-# 3. Run the API
+# 3. Download TWOSIDES
+# → http://tatonettilab.org/offsides/
+# Place TWOSIDES.csv in data/raw/
+
+# 4. Run the data pipeline (generates data/processed/interactions.parquet)
+make pipeline
+
+# 5. Start the API
 make run
 # → http://localhost:8000/docs
 ```
@@ -113,7 +190,7 @@ make run
 - **TWOSIDES coverage:** Based on FDA FAERS spontaneous reports — reporting bias means common drug pairs are over-represented; rare but serious interactions may be missed.
 - **No pharmacogenomic adjustment:** CYP450 polymorphisms (e.g., CYP2D6 in codeine metabolism) are not modelled.
 - **No dose-dependency:** Interaction risk often varies with dose; this tool treats each drug as a binary presence.
-- **Dental drug coverage:** Articaine and mepivacaine have limited pharmacovigilance data; local anaesthetic interactions are flagged conservatively.
+- **Local anaesthetic coverage:** Articaine and mepivacaine appear in TWOSIDES but have limited adverse event reports; their interactions should be interpreted conservatively.
 - **Not for clinical use:** See disclaimer above.
 
 ---
@@ -121,5 +198,4 @@ make run
 ## Licence
 
 Code: MIT  
-Data (TWOSIDES): Creative Commons — see original source for terms.  
-DrugBank data (if used in future): non-commercial academic use only.
+Data (TWOSIDES): Creative Commons — see original source for terms.

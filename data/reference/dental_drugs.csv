@@ -1,0 +1,28 @@
+drug_name,display_name,category,atc_class,notes
+amoxicillin,Amoxicillin,Antibiotic,J01CA04,First-line dental antibiotic
+metronidazole,Metronidazole,Antibiotic,J01XD01,Used for anaerobic/periodontal infections; interacts with alcohol and warfarin
+clindamycin,Clindamycin,Antibiotic,J01FF01,Penicillin-allergy alternative; risk of C. diff
+clarithromycin,Clarithromycin,Antibiotic,J01FA09,Strong CYP3A4 inhibitor — high interaction burden
+azithromycin,Azithromycin,Antibiotic,J01FA10,QT prolongation risk with other QT-prolonging drugs
+ibuprofen,Ibuprofen,NSAID Analgesic,M01AE01,Common post-op analgesic; interacts with anticoagulants
+naproxen,Naproxen,NSAID Analgesic,M01AE02,Longer-acting NSAID; same interaction profile as ibuprofen
+aspirin,Aspirin,NSAID Analgesic,B01AC06,Antiplatelet effect clinically significant in dental surgery
+acetaminophen,Paracetamol / Acetaminophen,Non-opioid Analgesic,N02BE01,Preferred analgesic for anticoagulated patients; hepatotoxicity with alcohol
+codeine,Codeine,Opioid Analgesic,N02AA59,CYP2D6-dependent prodrug; interacts with CNS depressants
+dihydrocodeine,Dihydrocodeine,Opioid Analgesic,N02AA08,Similar profile to codeine; used in some jurisdictions
+tramadol,Tramadol,Opioid Analgesic,N02AX02,Serotonin syndrome risk with SSRIs/MAOIs; lowers seizure threshold
+lidocaine,Lidocaine,Local Anaesthetic,N01BB02,Most common dental LA; systemic risk with high doses or IV absorption
+articaine,Articaine,Local Anaesthetic,N01BB08,Most widely used dental LA in Europe; amide-type
+mepivacaine,Mepivacaine,Local Anaesthetic,N01BB03,Used without vasoconstrictor in cardiovascular patients
+bupivacaine,Bupivacaine,Local Anaesthetic,N01BB01,Longer duration; cardiotoxicity risk
+levobupivacaine,Levobupivacaine,Local Anaesthetic,N01BB10,S-enantiomer of bupivacaine; improved cardiac safety profile
+prilocaine,Prilocaine,Local Anaesthetic,N01BB04,Risk of methaemoglobinaemia at high doses
+diazepam,Diazepam,Anxiolytic / Sedative,N05BA01,Oral sedation for dental anxiety; CNS/respiratory depression with opioids
+midazolam,Midazolam,Anxiolytic / Sedative,N05CD08,IV/intranasal conscious sedation; potent CYP3A4 substrate
+fluconazole,Fluconazole,Antifungal,J02AC01,Strong CYP2C9/CYP3A4 inhibitor — one of the highest interaction burdens in dentistry
+nystatin,Nystatin,Antifungal,A07AA02,Topical only; minimal systemic interactions
+dexamethasone,Dexamethasone,Corticosteroid,H02AB02,Post-op swelling/inflammation; interacts with NSAIDs and antidiabetics
+prednisolone,Prednisolone,Corticosteroid,H02AB06,Short courses for acute dental swelling
+methylprednisolone,Methylprednisolone,Corticosteroid,H02AB04,IV/IM use; similar interaction profile to prednisolone
+prednisone,Prednisone,Corticosteroid,H02AB07,Prodrug of prednisolone; same interaction profile
+epinephrine,Epinephrine / Adrenaline,Vasoconstrictor,C01CA24,Co-administered with LA; interacts with beta-blockers and TCAs
