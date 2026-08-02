@@ -40,8 +40,6 @@ curated by category        drug_1 OR drug_2 is dental
 |--------|-------------|---------|
 | [TWOSIDES](http://tatonettilab.org/offsides/) | 42.9M rows — drug pairs × adverse effects derived from FDA FAERS spontaneous reports via disproportionality analysis (PRR). Covers 1,918 unique drugs and 11,281 unique adverse effects. | Creative Commons |
 
-> **Note:** DrugBank was the original target but was replaced by TWOSIDES, which is freely available without registration and provides real-world pharmacovigilance signal directly from FDA adverse event reports.
-
 ### What TWOSIDES contains (per row)
 
 | Column | Description |
@@ -77,7 +75,7 @@ The reference CSV also stores ATC codes and clinical notes for each drug (e.g. "
 
 ## Data Pipeline (`src/ddi_scorer/pipeline.py`)
 
-Streams the 4 GB TWOSIDES CSV in 500,000-row chunks — never loads the whole file into memory.
+Streams the 4 GB TWOSIDES CSV in 500,000-row chunks - never loads the whole file into memory.
 
 **Steps:**
 1. Load the 27 dental drugs from `data/reference/dental_drugs.csv`
@@ -109,7 +107,7 @@ Each dental drug ↔ patient drug pair generates many rows in `interactions.parq
 
 Scores are normalised to a 0–100 scale and binned into `major / moderate / minor`.
 
-Interpretability is prioritised over model complexity — a clinician must be able to understand *why* a pair is flagged.
+Interpretability is prioritised over model complexity - a clinician must be able to understand why a pair is flagged.
 
 ---
 
