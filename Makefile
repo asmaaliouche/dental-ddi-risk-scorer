@@ -27,6 +27,9 @@ check: lint test
 pipeline:
 	poetry run python src/ddi_scorer/pipeline.py
 
+score:
+	poetry run python src/ddi_scorer/scorer.py
+
 verify:
 	poetry run python -c "\
 import pandas as pd; \
