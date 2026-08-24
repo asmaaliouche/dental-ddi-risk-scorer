@@ -27,7 +27,7 @@ async def get_dental_drugs(request: Request) -> DentalDrugsResponse:
             name=str(row["drug_name"]),
             display_name=str(row["display_name"]),
             category=str(row["category"]),
-            atc_code=str(row["atc_code"]),
+            atc_code=str(row["atc_class"]),
             notes=str(row["notes"]),
         )
         for _, row in dental_df.iterrows()
@@ -47,6 +47,9 @@ async def get_dental_drugs(request: Request) -> DentalDrugsResponse:
 )
 async def get_patient_drugs(request: Request) -> PatientDrugsResponse:
     scores_df = request.app.state.scores
+    
+    if scores_df is None:
+        return PatientDrugsResponse(drugs=[], total=0)
 
     drugs = sorted(scores_df["patient_drug_name"].dropna().unique().tolist())
 
