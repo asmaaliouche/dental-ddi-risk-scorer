@@ -9,8 +9,8 @@ import pytest
 
 from ddi_scorer.scorer import add_severity_weights, aggregate_scores, severity_weight
 
-
 # ── Tests: severity_weight ────────────────────────────────────────────────────
+
 
 def test_severity_weight_high_for_death():
     assert severity_weight("Death") == 1.0
@@ -56,6 +56,7 @@ def test_severity_weight_case_insensitive():
 
 # ── Tests: add_severity_weights ───────────────────────────────────────────────
 
+
 def test_add_severity_weights_adds_column():
     df = pd.DataFrame({"condition_concept_name": ["Death", "Nausea", "Unknown condition"]})
     result = add_severity_weights(df)
@@ -66,8 +67,8 @@ def test_add_severity_weights_adds_column():
 def test_add_severity_weights_correct_values():
     df = pd.DataFrame({"condition_concept_name": ["Death", "Nausea", "Unknown condition"]})
     result = add_severity_weights(df)
-    assert result.loc[0, "severity_weight"] == 1.0   # Death → HIGH
-    assert result.loc[1, "severity_weight"] == 0.2   # Nausea → LOW
+    assert result.loc[0, "severity_weight"] == 1.0  # Death → HIGH
+    assert result.loc[1, "severity_weight"] == 0.2  # Nausea → LOW
     assert result.loc[2, "severity_weight"] == 0.05  # Unknown → DEFAULT
 
 
@@ -79,22 +80,28 @@ def test_add_severity_weights_does_not_mutate_input():
 
 # ── Tests: aggregate_scores ───────────────────────────────────────────────────
 
+
 @pytest.fixture
 def sample_interactions():
     """Synthetic interaction rows for two drug pairs."""
-    return pd.DataFrame({
-        "dental_drug_name":    ["fluconazole"] * 3 + ["ibuprofen"] * 2,
-        "patient_drug_name":   ["simvastatin"] * 3 + ["warfarin"]  * 2,
-        "dental_drug_category":["Antifungal"]  * 3 + ["NSAID Analgesic"] * 2,
-        "condition_concept_name": [
-            "Rhabdomyolysis", "Death", "Nausea",
-            "Haemorrhage", "Death",
-        ],
-        "PRR":  [12.7, 8.3, 3.1, 5.5, 4.0],
-        "PRR_error": [0.3, 0.2, 0.1, 0.4, 0.3],
-        "mean_reporting_frequency": [0.08, 0.05, 0.02, 0.04, 0.03],
-        "severity_weight": [1.0, 1.0, 0.2, 1.0, 1.0],
-    })
+    return pd.DataFrame(
+        {
+            "dental_drug_name": ["fluconazole"] * 3 + ["ibuprofen"] * 2,
+            "patient_drug_name": ["simvastatin"] * 3 + ["warfarin"] * 2,
+            "dental_drug_category": ["Antifungal"] * 3 + ["NSAID Analgesic"] * 2,
+            "condition_concept_name": [
+                "Rhabdomyolysis",
+                "Death",
+                "Nausea",
+                "Haemorrhage",
+                "Death",
+            ],
+            "PRR": [12.7, 8.3, 3.1, 5.5, 4.0],
+            "PRR_error": [0.3, 0.2, 0.1, 0.4, 0.3],
+            "mean_reporting_frequency": [0.08, 0.05, 0.02, 0.04, 0.03],
+            "severity_weight": [1.0, 1.0, 0.2, 1.0, 1.0],
+        }
+    )
 
 
 def test_aggregate_scores_one_row_per_pair(sample_interactions):
@@ -105,9 +112,16 @@ def test_aggregate_scores_one_row_per_pair(sample_interactions):
 
 def test_aggregate_scores_has_required_columns(sample_interactions):
     result = aggregate_scores(sample_interactions)
-    for col in ["risk_score", "severity_bin", "prr_max", "n_adverse_effects",
-                "mean_severity_weight", "prr_component", "breadth_component",
-                "severity_component"]:
+    for col in [
+        "risk_score",
+        "severity_bin",
+        "prr_max",
+        "n_adverse_effects",
+        "mean_severity_weight",
+        "prr_component",
+        "breadth_component",
+        "severity_component",
+    ]:
         assert col in result.columns, f"Missing column: {col}"
 
 
@@ -135,16 +149,18 @@ def test_aggregate_scores_prr_max_is_max(sample_interactions):
 
 def test_aggregate_scores_drops_none_rows():
     """Rows where dental_drug_name is None or 'None' should be excluded."""
-    df = pd.DataFrame({
-        "dental_drug_name":    [None, "None", "ibuprofen"],
-        "patient_drug_name":   ["warfarin", "warfarin", "warfarin"],
-        "dental_drug_category":["X", "X", "NSAID Analgesic"],
-        "condition_concept_name": ["Death", "Death", "Haemorrhage"],
-        "PRR":  [5.0, 5.0, 3.0],
-        "PRR_error": [0.2, 0.2, 0.1],
-        "mean_reporting_frequency": [0.03, 0.03, 0.02],
-        "severity_weight": [1.0, 1.0, 1.0],
-    })
+    df = pd.DataFrame(
+        {
+            "dental_drug_name": [None, "None", "ibuprofen"],
+            "patient_drug_name": ["warfarin", "warfarin", "warfarin"],
+            "dental_drug_category": ["X", "X", "NSAID Analgesic"],
+            "condition_concept_name": ["Death", "Death", "Haemorrhage"],
+            "PRR": [5.0, 5.0, 3.0],
+            "PRR_error": [0.2, 0.2, 0.1],
+            "mean_reporting_frequency": [0.03, 0.03, 0.02],
+            "severity_weight": [1.0, 1.0, 1.0],
+        }
+    )
     result = aggregate_scores(df)
     assert len(result) == 1
     assert result.iloc[0]["dental_drug_name"] == "ibuprofen"

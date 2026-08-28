@@ -19,14 +19,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from api.routers import check, drugs
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
-ROOT         = Path(__file__).resolve().parents[1]
-SCORES_PATH  = ROOT / "data" / "processed" / "scores.parquet"
-DENTAL_PATH  = ROOT / "data" / "reference"  / "dental_drugs.csv"
+ROOT = Path(__file__).resolve().parents[1]
+SCORES_PATH = ROOT / "data" / "processed" / "scores.parquet"
+DENTAL_PATH = ROOT / "data" / "reference" / "dental_drugs.csv"
 
 log = logging.getLogger(__name__)
 
 
 # ── Lifespan — load data once at startup ─────────────────────────────────────
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -40,9 +41,7 @@ async def lifespan(app: FastAPI):
         app.state.scores = None
     else:
         app.state.scores = pd.read_parquet(SCORES_PATH)
-        log.info(
-            "Scores loaded: %s pairs", f"{len(app.state.scores):,}"
-        )
+        log.info("Scores loaded: %s pairs", f"{len(app.state.scores):,}")
 
     log.info("Loading dental drug list from %s …", DENTAL_PATH)
     app.state.dental_drugs = pd.read_csv(DENTAL_PATH)
@@ -52,7 +51,7 @@ async def lifespan(app: FastAPI):
 
     # ── Shutdown ──────────────────────────────────────────────────────────────
     log.info("Shutting down — releasing data.")
-    app.state.scores       = None
+    app.state.scores = None
     app.state.dental_drugs = None
 
 
@@ -84,8 +83,8 @@ app.add_middleware(
 )
 
 # ── Routers ───────────────────────────────────────────────────────────────────
-app.include_router(check.router,  tags=["Interactions"])
-app.include_router(drugs.router,  tags=["Reference data"])
+app.include_router(check.router, tags=["Interactions"])
+app.include_router(drugs.router, tags=["Reference data"])
 
 
 # ── Health check ──────────────────────────────────────────────────────────────

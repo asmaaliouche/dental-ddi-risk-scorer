@@ -7,8 +7,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-
 # ── /check ────────────────────────────────────────────────────────────────────
+
 
 class CheckRequest(BaseModel):
     patient_drugs: list[str] = Field(
@@ -47,6 +47,7 @@ class CheckResponse(BaseModel):
 
 # ── /dental-drugs ─────────────────────────────────────────────────────────────
 
+
 class DentalDrug(BaseModel):
     name: str = Field(description="Canonical lowercase name (used for matching).")
     display_name: str
@@ -61,6 +62,7 @@ class DentalDrugsResponse(BaseModel):
 
 
 # ── /patient-drugs ────────────────────────────────────────────────────────────
+
 
 class PatientDrugsResponse(BaseModel):
     drugs: list[str] = Field(
