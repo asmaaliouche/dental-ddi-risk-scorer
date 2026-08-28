@@ -20,10 +20,10 @@ from pathlib import Path
 import pandas as pd
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
-ROOT = Path(__file__).resolve().parents[2]          # project root
-TWOSIDES_PATH   = ROOT / "data" / "raw"  / "TWOSIDES.csv"
+ROOT = Path(__file__).resolve().parents[2]  # project root
+TWOSIDES_PATH = ROOT / "data" / "raw" / "TWOSIDES.csv"
 DENTAL_REF_PATH = ROOT / "data" / "reference" / "dental_drugs.csv"
-OUT_PATH        = ROOT / "data" / "processed" / "interactions.parquet"
+OUT_PATH = ROOT / "data" / "processed" / "interactions.parquet"
 
 CHUNK_SIZE = 500_000
 
@@ -37,6 +37,7 @@ log = logging.getLogger(__name__)
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
 
 def load_dental_drug_set(ref_path: Path) -> set[str]:
     """Return the set of lowercase drug names that act as join keys to TWOSIDES."""
@@ -71,9 +72,7 @@ def filter_twosides(
     log.info("Streaming TWOSIDES from %s …", twosides_path)
     t0 = time.time()
 
-    for i, chunk in enumerate(
-        pd.read_csv(twosides_path, chunksize=chunk_size, low_memory=False)
-    ):
+    for i, chunk in enumerate(pd.read_csv(twosides_path, chunksize=chunk_size, low_memory=False)):
         total_rows += len(chunk)
 
         # Normalise names to lowercase for matching
@@ -135,24 +134,24 @@ def enrich(df: pd.DataFrame, lookup: dict[str, dict]) -> pd.DataFrame:
 
     # Case 1: drug_1 is dental, drug_2 is the patient's drug
     mask1 = df["drug_1_is_dental"] & ~df["drug_2_is_dental"]
-    df.loc[mask1, "dental_drug_name"]     = df.loc[mask1, "drug_1_concept_name"]
-    df.loc[mask1, "patient_drug_name"]    = df.loc[mask1, "drug_2_concept_name"]
+    df.loc[mask1, "dental_drug_name"] = df.loc[mask1, "drug_1_concept_name"]
+    df.loc[mask1, "patient_drug_name"] = df.loc[mask1, "drug_2_concept_name"]
     df.loc[mask1, "dental_drug_category"] = d1[mask1].map(
         lambda x: lookup.get(x, {}).get("category", "Unknown")
     )
 
     # Case 2: drug_2 is dental, drug_1 is the patient's drug
     mask2 = df["drug_2_is_dental"] & ~df["drug_1_is_dental"]
-    df.loc[mask2, "dental_drug_name"]     = df.loc[mask2, "drug_2_concept_name"]
-    df.loc[mask2, "patient_drug_name"]    = df.loc[mask2, "drug_1_concept_name"]
+    df.loc[mask2, "dental_drug_name"] = df.loc[mask2, "drug_2_concept_name"]
+    df.loc[mask2, "patient_drug_name"] = df.loc[mask2, "drug_1_concept_name"]
     df.loc[mask2, "dental_drug_category"] = d2[mask2].map(
         lambda x: lookup.get(x, {}).get("category", "Unknown")
     )
 
     # Case 3: both are dental drugs (drug-drug within dental list)
     mask3 = df["drug_1_is_dental"] & df["drug_2_is_dental"]
-    df.loc[mask3, "dental_drug_name"]     = df.loc[mask3, "drug_1_concept_name"]
-    df.loc[mask3, "patient_drug_name"]    = df.loc[mask3, "drug_2_concept_name"]
+    df.loc[mask3, "dental_drug_name"] = df.loc[mask3, "drug_1_concept_name"]
+    df.loc[mask3, "patient_drug_name"] = df.loc[mask3, "drug_2_concept_name"]
     df.loc[mask3, "dental_drug_category"] = "Both dental"
 
     return df
@@ -172,9 +171,10 @@ def save(df: pd.DataFrame, out_path: Path) -> None:
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
+
 def run() -> pd.DataFrame:
-    dental_drugs  = load_dental_drug_set(DENTAL_REF_PATH)
-    lookup        = load_dental_drug_lookup(DENTAL_REF_PATH)
+    dental_drugs = load_dental_drug_set(DENTAL_REF_PATH)
+    lookup = load_dental_drug_lookup(DENTAL_REF_PATH)
 
     df = filter_twosides(TWOSIDES_PATH, dental_drugs)
 
@@ -190,9 +190,10 @@ def run() -> pd.DataFrame:
     log.info("Unique dental drugs with interactions: %d", df["dental_drug_name"].nunique())
     log.info("Unique patient drugs involved:         %d", df["patient_drug_name"].nunique())
     log.info("Unique adverse effects:                %d", df["condition_concept_name"].nunique())
-    log.info("Unique drug pairs:                     %d",
-             df[["drug_1_concept_name", "drug_2_concept_name"]]
-             .drop_duplicates().shape[0])
+    log.info(
+        "Unique drug pairs:                     %d",
+        df[["drug_1_concept_name", "drug_2_concept_name"]].drop_duplicates().shape[0],
+    )
 
     return df
 

@@ -219,17 +219,24 @@ __marimo__/
 
 # ── Project-specific ──────────────────────────────────────────────────────────
 
-# Data — never commit raw datasets (TWOSIDES files can be hundreds of MB)
+# Data — never commit raw or processed datasets (TWOSIDES is 4+ GB)
 data/raw/
 data/processed/
+# Keep curated reference data (dental_drugs.csv) — do NOT ignore data/reference/
 
-# Keep reference data (curated dental drug list etc.) — do NOT ignore data/reference/
-
-# Environment
+# Environment variables
 .env
 
 # Virtual environments
 .venv/
+
+# Frontend — node_modules are reproducible via npm install
+frontend/node_modules/
+frontend/.vite/
+frontend/dist/
+
+# Portable Node.js binary (downloaded by scripts/get_node.py)
+.node/
 
 # Jupyter
 .ipynb_checkpoints/
@@ -238,3 +245,5 @@ data/processed/
 Thumbs.db
 desktop.ini
 .DS_Store
+*.swp
+*.bak
