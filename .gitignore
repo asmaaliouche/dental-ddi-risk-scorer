@@ -222,6 +222,7 @@ __marimo__/
 # Data — never commit raw or processed datasets (TWOSIDES is 4+ GB)
 data/raw/
 data/processed/
+!data/processed/scores.parquet
 # Keep curated reference data (dental_drugs.csv) — do NOT ignore data/reference/
 
 # Environment variables
