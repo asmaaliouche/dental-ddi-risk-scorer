@@ -222,6 +222,8 @@ dental-ddi-risk-scorer/
 │   └── test_scorer.py          # 19 unit tests (scoring engine)
 ├── Makefile                    # Developer workflow automation
 ├── pyproject.toml              # Poetry project + tool configuration
+├── requirements.txt            # Production dependencies for Render deployment
+├── render.yaml                 # Render deployment configuration
 └── .env.example                # Environment variable template
 ```
 
@@ -247,7 +249,27 @@ make build-ui   # production bundle
 
 ## Deployment
 
-See the deployment guide for Railway (backend) and Vercel (frontend) configuration. The key requirement is that `scores.parquet` (1.3 MB) must be accessible to the backend at startup — either committed to the repository or generated during the build phase.
+### Backend — [Render](https://render.com) (Free)
+
+The backend is deployed to Render's free tier using the included `render.yaml` configuration.
+
+1. Sign up at [render.com](https://render.com) and click **New → Web Service**.
+2. Connect your GitHub repository.
+3. Render will auto-detect `render.yaml` and configure everything automatically.
+4. Click **Deploy**. Once live, you'll get a public URL like `https://dental-ddi-risk-scorer.onrender.com`.
+
+> **Note:** The free tier spins down after 15 minutes of inactivity. The first request after idle takes ~30 seconds to wake up — this is expected and acceptable for a portfolio project.
+
+### Frontend — [Vercel](https://vercel.com) (Free)
+
+1. Connect your GitHub repository on Vercel.
+2. Set **Root Directory** to `frontend/`.
+3. Add an **Environment Variable**:
+   - Key: `VITE_API_BASE_URL`
+   - Value: your Render backend URL (e.g., `https://dental-ddi-risk-scorer.onrender.com`)
+4. Deploy. Vercel builds the Vite app and serves it on a public URL.
+
+> `scores.parquet` (1.3 MB) is committed to the repository so Render loads it at startup without any build step.
 
 ---
 

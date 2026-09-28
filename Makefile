@@ -50,7 +50,7 @@ print(df.nlargest(5, 'risk_score')[['dental_drug_name','patient_drug_name','risk
 "
 
 # ─────────────────────────────────────────────────────────────────────────────
-# API Backend
+# API Backend  (locally: port 8000 | production: Render free tier)
 # ─────────────────────────────────────────────────────────────────────────────
 run:
 	poetry run uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
