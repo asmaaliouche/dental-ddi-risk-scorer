@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: dental-ddi-risk-scorer
+    runtime: python
+    region: frankfurt  # closest to EU; change to "oregon" or "ohio" for US
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11"
